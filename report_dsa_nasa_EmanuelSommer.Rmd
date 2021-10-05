@@ -1,0 +1,344 @@
+---
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, fig.align='right', out.width="30%"}
+knitr::include_graphics("cooperation.jpg")
+```
+
+
+<br>
+<br>
+<br>
+
+# How old should be recruits and how long should you train them? TOOOO LONG
+
+#### Report of Emanuel Sommer for the Nasa Hackaton of the DSA Munich
+
+First of all the R packages used:
+
+```{r, echo=FALSE}
+library(tidyverse)
+```
+
+
+## A first taste or Data Importing & Cleaning
+
+Read in the data and get a first glimpse at the variables.
+
+```{r, message=FALSE, warning=FALSE}
+astro_data <- read_csv("astronauts.csv")
+```
+
+The next step is to detect outliers and missing data. Having this done one can decide on a strategy to deal with those.
+
+```{r}
+# First the numeric features (get an overview of statistical key numbers here
+# just for outlier detection)
+astro_data %>%
+  select(where(is.numeric)) %>%
+  summary()
+```
+
+First of all there are no observations with missing values present. Sanity checks for valid values are performed after one has checked the categorical features for missingness.
+
+```{r}
+# Check categorical data for NA's at least for the obvious ones 
+# (character NAs could be still in there)
+astro_data %>%
+  select(where(is.character)) %>%
+  summarise(across(everything(), ~ sum(is.na(.))))
+```
+
+So there are definitely some missing values. Let's have a closer look.
+
+```{r}
+# display the missing data
+astro_data %>%
+  filter(if_any(everything(), ~ is.na(.)))
+```
+
+```{r}
+### have a look whether name as the primary key is sufficient
+# uniquely identified by name, nationality and year of birth:
+astro_data %>%
+  group_by(name, nationality, year_of_birth) %>%
+  summarise(1, .groups = "drop") %>% nrow() 
+
+# uniquely identified just by name:
+length(unique(astro_data$name))
+
+# so one name is double
+
+astro_data %>%
+  group_by(name) %>%
+  summarise(n_birth_years = length(unique(year_of_birth))) %>%
+  filter(n_birth_years > 1)
+
+astro_data %>%
+  filter(name == "Aleksandrov, Aleksandr")
+
+# this is actually once the Bulgarian and once the Russian, as Wikipedia
+# writes the Bulgarian one as Alexandar we can change this to have name as
+# a unique key
+astro_data$name[astro_data$id == 447] <- "Aleksandrov, Alexandar"
+```
+
+
+From this one can conclude that now one can use the `name` variable as the main key for a single astronaut as there are no missing values. Down below I actually showed that two astronauts had the same name  As the only missing values occur in the variables `original_name`, once in the `selection` and once in the `ascent_shuttle` and `descent_shuttle` for the same mission in the latter cases one does not have to remove them in this particular case. This is because these variables will not play a crucial role in the further analysis.
+
+As shown below mostly the categorical features have quite many classes and thus are not easily checkable manually, for variables with less then 20 classes this is manageable.
+
+```{r}
+# Have a look at how many unique values the variables have
+astro_data %>%
+  select(where(is.character)) %>%
+  mutate(across(everything(), as_factor)) %>%
+  summarise(across(everything(), ~ length(unique(.))))
+
+# the classes of vars with less than 20 unique classes
+astro_data %>%
+  select(where(is.character)) %>%
+  mutate(across(everything(), as_factor)) %>%
+  select(where(~ length(unique(.)) < 20)) %>%
+  pivot_longer(everything(), names_to = "variable",
+               values_to = "unique_classes") %>%
+  group_by(variable, unique_classes) %>%
+  summarise(n_obs = n(), .groups = "keep") %>%
+  arrange(variable)
+```
+
+For the variables `military_civilian` and `sex` the results are not too surprising, but the `occupation` variable shows some data quality issues! For example Flight engineer is covered twice with the only difference being the case of the first letter, same goes for pilot. The occupations PSP and MSP were not clear to me and after a bit of searching I found out that these are the Payload Specialist and the Mission Specialist roles. Regarding all classes that cover somewhat space tourists I will group them all into one category called 'Space tourist'. Funnily enough on Wikipedia (https://en.wikipedia.org/wiki/Astronaut) it says that as of 2020 nobody has even  qualified for the status of space tourist and one could read the full taxonomy in order to correctly assign each of the space travelers the actual correct class but I will omit this here for simplicity reasons.
+
+```{r}
+# clean the data according to results
+astro_data <- astro_data %>%
+  mutate(occupation = case_when(
+    occupation == "pilot" ~ "Pilot",
+    occupation == "flight engineer" ~ "Flight engineer",
+    occupation == "PSP" ~ "Payload Specialist",
+    occupation == "MSP" ~ "Mission Specialist",
+    occupation == "Other (Journalist)" ~ "Space tourist",
+    occupation == "Other (space tourist)" ~ "Space tourist",
+    occupation == "Other (Space tourist)" ~ "Space tourist",
+    occupation == "spaceflight participant" ~ "Space tourist",
+    # for consistent upper case:
+    occupation == "commander" ~ "Commander",
+    TRUE ~ occupation
+  ))
+
+unique(astro_data$occupation)
+```
+
+
+Now one can formulate and perform some basic **sanity checks**:
+
+1. `id` should be unique.
+2. `year_of_birth` $\leq$ `year_of_selection`
+3. `year_of_selection` $\leq$ `year_of_mission`
+4. Check some suspiciously high values from the summary above. (not the ones covered in 5-6.)
+5. `hours_mission` $\leq$ `total_hrs_sum` and the sum should be the total + the max is suspiciously high
+6. `eva_hrs_mission` $\leq$ `total_eva_hrs` and the sum should be the total + this is definitely violated as can be seen from the max. So there are definitely data quality issues.
+7. All astronauts should have the same number, year of selection and birth in each row.
+8. `mission_number` $\leq$ `total_number_of_missions` 
+
+
+```{r}
+### 1. ----------------
+length(unique(astro_data$id)) == nrow(astro_data)
+
+### 2.  ----------------
+all(astro_data$year_of_birth <= astro_data$year_of_selection)
+
+### 3.  ----------------
+all(astro_data$year_of_selection <= astro_data$year_of_mission)
+astro_data %>%
+  filter(year_of_selection > year_of_mission)
+# Franco Malerba was actually selected 1977 and not 1998 year of the 
+# mission is correct
+# Thomas, Andrew S. W. actually had his first spaceflight in 1996 
+# (STS-77 as correctly written)
+
+# the rest of Andrew is ok
+astro_data %>%
+  filter(name == "Thomas, Andrew S. W.")
+
+# correct the errors
+astro_data$year_of_selection[astro_data$id == 648] <- 1977
+astro_data$year_of_mission[astro_data$id == 862] <- 1996
+
+### 4. ----------------
+# high max nationwide number
+astro_data %>%
+  arrange(desc(nationwide_number)) %>%
+  head(3)
+
+astro_data %>%
+  filter(name == "Hague, Tyler")
+# the nationwide number of Hague, Tyler is indeed not correct and thus
+# will be adjusted
+astro_data$nationwide_number[astro_data$id == 1271] <- 344
+
+# high year of selection
+astro_data %>%
+  arrange(desc(year_of_selection)) %>%
+  head(3)
+# this is actually correct
+```
+
+```{r}
+### 5. ----------------
+# first a look at the biggest values 
+astro_data %>%
+  arrange(desc(hours_mission)) %>%
+  head(5)
+
+astro_data %>%
+  arrange(desc(total_hrs_sum)) %>%
+  distinct(name, .keep_all = TRUE) %>%
+  head(3) 
+# the max values are correct
+
+# now check the sum over missions (just roughly)
+astro_data %>%
+  group_by(name) %>%
+  summarise(actual_total_hrs = sum(hours_mission),
+            total_hrs_sum = total_hrs_sum,
+            .groups = "drop") %>%
+  # roughly the same +- 2 hour the actual
+  mutate(diff_total_hrs = abs(actual_total_hrs - total_hrs_sum)) %>%
+  filter(diff_total_hrs > 2) %>%
+  arrange(desc(diff_total_hrs)) %>%
+  distinct(name, .keep_all = TRUE)
+```
+
+Sanity check 5. showed that actually the column `total_hrs_sum` has serious quality issues! I checked for the first 4 largest differences between calculated total time spend in space and the given variable `total_hrs_sum` and every time the `total_hrs_sum` variable was wrong and the newly calculated column was spot on right. Thus as there at least ~80 rows with at least some issue I will proceed by removing `total_hrs_sum` from the data set and add the calculated `calc_total_hrs` column instead, which corresponds to the `actual_total_hrs` above.
+
+```{r}
+astro_data <- astro_data %>%
+  select(-total_hrs_sum) %>%
+  group_by(name) %>%
+  mutate(calc_total_hrs = sum(hours_mission)) %>%
+  ungroup()
+```
+
+
+
+```{r}
+### 6. ----------------
+# the highest eva_hrs_mission is for sure wrong so have a look
+astro_data %>%
+  arrange(desc(eva_hrs_mission)) %>%
+  head(5)
+
+# Solovyev, Anatoly indeed has the biggest total eva time of correctly 78 hours
+# but thus the 89.13 is not one of his 16 spacewalks but instead ...
+solovey_446_spacewalk <- astro_data %>%
+  filter(name == "Solovyev, Anatoly") %>%
+  filter(eva_hrs_mission < 80) %>%
+  summarise(total_eva_hrs - sum(eva_hrs_mission)) %>%
+  distinct() %>% 
+  as.numeric()
+solovey_446_spacewalk
+# correct it
+astro_data$eva_hrs_mission[astro_data$id == 446] <- solovey_446_spacewalk
+
+# now again check the sum over missions (just roughly)
+astro_data %>%
+  group_by(name) %>%
+  summarise(actual_total_eva = sum(eva_hrs_mission),
+            total_eva_hrs = total_eva_hrs,
+            .groups = "drop") %>%
+  # roughly the same +- 2 hour the actual
+  mutate(diff_total_eva = abs(actual_total_eva - total_eva_hrs)) %>%
+  filter(diff_total_eva > 2) %>%
+  arrange(desc(diff_total_eva)) %>%
+  distinct(.keep_all = TRUE)
+
+astro_data %>%
+  filter(name == "Hague, Tyler")
+# so wrongly Hague, Tyler got his eva hours also for the aborted flight
+# this is of course wrong and should be corrected
+
+astro_data$eva_hrs_mission[astro_data$id == 1270] <- 0
+
+
+astro_data %>%
+  filter(name == "Leestma, David C.")
+# here the eva_hrs_mission of the sts-41-G is wrongly set to 1 but it were
+# 3.5 hours as correctly stated in the total_eva_hrs column
+astro_data$eva_hrs_mission[astro_data$id == 316] <- 3.5
+
+```
+
+```{r}
+### 7. ----------------
+astro_data %>%
+  group_by(name) %>%
+  summarise(n_number = length(unique(number)),
+            n_nat_number = length(unique(nationwide_number)),
+            n_selection = length(unique(year_of_selection)),
+            n_birth = length(unique(year_of_birth))) %>%
+  filter(n_number > 1 | n_nat_number > 1 |
+           n_selection > 1 | n_birth > 1) %>%
+  nrow() == 0
+
+### 8. ----------------
+all(astro_data$mission_number <= astro_data$total_number_of_missions)
+```
+
+
+Now as the data set can pass at least the sanity checks it is time for some feature engineering i.e. add the key additional variables for further this specific analysis to the data set.
+
+1. The age of the astronaut when selected: `age_selected`
+2. The duration from selection to the first mission: `train_time`
+
+```{r}
+astro_data <- astro_data %>%
+  mutate(age_selected = year_of_selection - year_of_birth) %>%
+  group_by(name) %>%
+  mutate(train_time = min(year_of_mission) - year_of_selection) %>%
+  ungroup()
+```
+
+
+## Get the game on or Statistical key numbers
+
+? map to countries
+? make a plot and highlight very important figures
+try to find some hidden gems the youngest the shortest and longest training period
+descriptive analysis of the univariate variables age selected and train time
+also effects over time
+
+## What you have been waiting for or Visualization and conclusion
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
