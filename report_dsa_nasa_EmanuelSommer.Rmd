@@ -3,7 +3,7 @@ output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, rows.print = 20)
 ```
 
 ```{r, echo=FALSE, fig.align='right', out.width="30%"}
@@ -15,18 +15,31 @@ knitr::include_graphics("cooperation.jpg")
 <br>
 <br>
 
-# How old should be recruits and how long should you train them? TOOOO LONG
+# How many years do I have left to become an astronaut?
 
 #### Report of Emanuel Sommer for the Nasa Hackaton of the DSA Munich
 
-First of all the R packages used:
+\
 
-```{r, echo=FALSE}
-library(tidyverse)
+Hi, my name is Emanuel and I am a 23 year old master student of mathematics. Besides of being into data and R programming I am absolutely inspired and fascinated by space travel. I am not that guy who is into the astrophysics and aliens part but projects like *Artemis* (Moon $\rightarrow$ Mars) are so inspiring for me as they display how humanity can achieve tremendous goals through teamwork, ingenuity and innovation. And for real who hasn't dreamed about a selfie in space ;D.
+
+```{r, echo=FALSE, fig.align='center', out.width="50%"}
+knitr::include_graphics("astronaut_cool.jpg")
+library(knitr)
 ```
 
+First of all the R packages used:
 
-## A first taste or Data Importing & Cleaning
+```{r, results = 'hide', message=FALSE, warning=FALSE}
+library(tidyverse)
+library(viridis)
+library(patchwork)
+library(ggtext)
+```
+
+\newpage
+
+## (1) Get ready for takeoff or data importing & cleaning
 
 Read in the data and get a first glimpse at the variables.
 
@@ -44,14 +57,15 @@ astro_data %>%
   summary()
 ```
 
-First of all there are no observations with missing values present. Sanity checks for valid values are performed after one has checked the categorical features for missingness.
+First of all there are no observations with missing values present. Sanity checks for valid values are performed after one has checked the categorical features for missingness. Moreover note that the most recent mission covered here is from 2019.
 
 ```{r}
 # Check categorical data for NA's at least for the obvious ones 
 # (character NAs could be still in there)
 astro_data %>%
   select(where(is.character)) %>%
-  summarise(across(everything(), ~ sum(is.na(.))))
+  summarise(across(everything(), ~ sum(is.na(.)))) %>%
+  as_vector()
 ```
 
 So there are definitely some missing values. Let's have a closer look.
@@ -59,7 +73,8 @@ So there are definitely some missing values. Let's have a closer look.
 ```{r}
 # display the missing data
 astro_data %>%
-  filter(if_any(everything(), ~ is.na(.)))
+  filter(if_any(everything(), ~ is.na(.))) %>%
+  select(where(~ any(is.na(.))))
 ```
 
 ```{r}
@@ -80,7 +95,8 @@ astro_data %>%
   filter(n_birth_years > 1)
 
 astro_data %>%
-  filter(name == "Aleksandrov, Aleksandr")
+  filter(name == "Aleksandrov, Aleksandr") %>%
+  select(id, name, nationality, year_of_birth)
 
 # this is actually once the Bulgarian and once the Russian, as Wikipedia
 # writes the Bulgarian one as Alexandar we can change this to have name as
@@ -89,7 +105,7 @@ astro_data$name[astro_data$id == 447] <- "Aleksandrov, Alexandar"
 ```
 
 
-From this one can conclude that now one can use the `name` variable as the main key for a single astronaut as there are no missing values. Down below I actually showed that two astronauts had the same name  As the only missing values occur in the variables `original_name`, once in the `selection` and once in the `ascent_shuttle` and `descent_shuttle` for the same mission in the latter cases one does not have to remove them in this particular case. This is because these variables will not play a crucial role in the further analysis.
+From this one can conclude that now one can use the `name` variable as the main key for a single astronaut as there are no missing values. As the only missing values occur in the variables `original_name`, once in the `selection` and once in the `ascent_shuttle` and `descent_shuttle` for the same mission in the latter cases one does not have to remove them in this particular case. This is because these variables will not play a crucial role in the further analysis.
 
 As shown below mostly the categorical features have quite many classes and thus are not easily checkable manually, for variables with less then 20 classes this is manageable.
 
@@ -98,7 +114,8 @@ As shown below mostly the categorical features have quite many classes and thus 
 astro_data %>%
   select(where(is.character)) %>%
   mutate(across(everything(), as_factor)) %>%
-  summarise(across(everything(), ~ length(unique(.))))
+  summarise(across(everything(), ~ length(unique(.)))) %>%
+  as_vector()
 
 # the classes of vars with less than 20 unique classes
 astro_data %>%
@@ -141,10 +158,11 @@ Now one can formulate and perform some basic **sanity checks**:
 2. `year_of_birth` $\leq$ `year_of_selection`
 3. `year_of_selection` $\leq$ `year_of_mission`
 4. Check some suspiciously high values from the summary above. (not the ones covered in 5-6.)
-5. `hours_mission` $\leq$ `total_hrs_sum` and the sum should be the total + the max is suspiciously high
+5. `hours_mission` $\leq$ `total_hrs_sum` and the sum should be the total + the max is suspiciously high.
 6. `eva_hrs_mission` $\leq$ `total_eva_hrs` and the sum should be the total + this is definitely violated as can be seen from the max. So there are definitely data quality issues.
 7. All astronauts should have the same number, year of selection and birth in each row.
 8. `mission_number` $\leq$ `total_number_of_missions` 
+9. Every astronaut has to have a mission number 1.
 
 
 ```{r}
@@ -157,7 +175,8 @@ all(astro_data$year_of_birth <= astro_data$year_of_selection)
 ### 3.  ----------------
 all(astro_data$year_of_selection <= astro_data$year_of_mission)
 astro_data %>%
-  filter(year_of_selection > year_of_mission)
+  filter(year_of_selection > year_of_mission) %>%
+  select(id, name, year_of_selection, year_of_mission)
 # Franco Malerba was actually selected 1977 and not 1998 year of the 
 # mission is correct
 # Thomas, Andrew S. W. actually had his first spaceflight in 1996 
@@ -165,7 +184,8 @@ astro_data %>%
 
 # the rest of Andrew is ok
 astro_data %>%
-  filter(name == "Thomas, Andrew S. W.")
+  filter(name == "Thomas, Andrew S. W.") %>%
+  select(id, name, year_of_selection, year_of_mission)
 
 # correct the errors
 astro_data$year_of_selection[astro_data$id == 648] <- 1977
@@ -175,10 +195,12 @@ astro_data$year_of_mission[astro_data$id == 862] <- 1996
 # high max nationwide number
 astro_data %>%
   arrange(desc(nationwide_number)) %>%
+  select(id, name, nationwide_number, number) %>%
   head(3)
 
 astro_data %>%
-  filter(name == "Hague, Tyler")
+  filter(name == "Hague, Tyler") %>%
+  select(id, name, nationwide_number, number)
 # the nationwide number of Hague, Tyler is indeed not correct and thus
 # will be adjusted
 astro_data$nationwide_number[astro_data$id == 1271] <- 344
@@ -186,8 +208,9 @@ astro_data$nationwide_number[astro_data$id == 1271] <- 344
 # high year of selection
 astro_data %>%
   arrange(desc(year_of_selection)) %>%
+  select(id, name, year_of_selection, year_of_mission) %>%
   head(3)
-# this is actually correct
+# this is correct
 ```
 
 ```{r}
@@ -195,11 +218,13 @@ astro_data %>%
 # first a look at the biggest values 
 astro_data %>%
   arrange(desc(hours_mission)) %>%
+  select(id, name, hours_mission) %>%
   head(5)
 
 astro_data %>%
   arrange(desc(total_hrs_sum)) %>%
   distinct(name, .keep_all = TRUE) %>%
+  select(id, name, total_hrs_sum) %>%
   head(3) 
 # the max values are correct
 
@@ -213,7 +238,8 @@ astro_data %>%
   mutate(diff_total_hrs = abs(actual_total_hrs - total_hrs_sum)) %>%
   filter(diff_total_hrs > 2) %>%
   arrange(desc(diff_total_hrs)) %>%
-  distinct(name, .keep_all = TRUE)
+  distinct(name, .keep_all = TRUE) %>%
+  head(10)
 ```
 
 Sanity check 5. showed that actually the column `total_hrs_sum` has serious quality issues! I checked for the first 4 largest differences between calculated total time spend in space and the given variable `total_hrs_sum` and every time the `total_hrs_sum` variable was wrong and the newly calculated column was spot on right. Thus as there at least ~80 rows with at least some issue I will proceed by removing `total_hrs_sum` from the data set and add the calculated `calc_total_hrs` column instead, which corresponds to the `actual_total_hrs` above.
@@ -233,6 +259,7 @@ astro_data <- astro_data %>%
 # the highest eva_hrs_mission is for sure wrong so have a look
 astro_data %>%
   arrange(desc(eva_hrs_mission)) %>%
+  select(id, name, eva_hrs_mission, total_eva_hrs) %>%
   head(5)
 
 # Solovyev, Anatoly indeed has the biggest total eva time of correctly 78 hours
@@ -260,7 +287,8 @@ astro_data %>%
   distinct(.keep_all = TRUE)
 
 astro_data %>%
-  filter(name == "Hague, Tyler")
+  filter(name == "Hague, Tyler") %>%
+  select(id, name, eva_hrs_mission, total_eva_hrs, in_orbit)
 # so wrongly Hague, Tyler got his eva hours also for the aborted flight
 # this is of course wrong and should be corrected
 
@@ -268,7 +296,8 @@ astro_data$eva_hrs_mission[astro_data$id == 1270] <- 0
 
 
 astro_data %>%
-  filter(name == "Leestma, David C.")
+  filter(name == "Leestma, David C.") %>%
+  select(id, name, eva_hrs_mission, total_eva_hrs, in_orbit)
 # here the eva_hrs_mission of the sts-41-G is wrongly set to 1 but it were
 # 3.5 hours as correctly stated in the total_eva_hrs column
 astro_data$eva_hrs_mission[astro_data$id == 316] <- 3.5
@@ -289,36 +318,225 @@ astro_data %>%
 
 ### 8. ----------------
 all(astro_data$mission_number <= astro_data$total_number_of_missions)
+
+### 9. ----------------
+astro_data %>%
+  group_by(name) %>%
+  summarise(valid_mission_number = all(sort(mission_number) == seq(n()))) %>%
+  filter(!valid_mission_number)
+
+astro_data %>%
+  filter(str_detect(name, "Shepard")) %>%
+  select(id, name, mission_number, total_number_of_missions, mission_title, year_of_mission)
+# So actually the first mission of Alan Shepard with the Mercury-Redstone 3 
+# is not in the data set maybe as it was only a suborbital flight but then 
+# the mission number should be 1. From the two ways of proceeding i.e. 
+# setting the mission number to 1 or adding an additional row for the MR-3
+# launch I will pick the first option. Either way this decision won't impact the 
+# further analysis a lot
+astro_data$mission_number[astro_data$id == 117] <- 1
+astro_data$total_number_of_missions[astro_data$id == 117] <- 1
+
 ```
 
 
-Now as the data set can pass at least the sanity checks it is time for some feature engineering i.e. add the key additional variables for further this specific analysis to the data set.
+Now as the data set can pass the specified sanity checks it is time for some feature engineering i.e. add interesting additional variables for further analysis to the data set.
 
 1. The age of the astronaut when selected: `age_selected`
 2. The duration from selection to the first mission: `train_time`
+3. The decade an astronaut was selected: `decade_sel`
+4. As can be seen in the below visualization Russia and the US have by far the most space-travelers and thus the new column `nationality_red` covers just the three levels 'U.S.', 'U.S.S.R./Russia' and 'Rest of the world'.
 
 ```{r}
+astro_data %>%
+  filter(mission_number == 1) %>%
+  group_by(nationality) %>%
+  summarise(n = n()) %>%
+  ungroup() %>%
+  mutate(nationality = as_factor(nationality),
+         nationality = fct_reorder(nationality, n)) %>%
+  ggplot(aes(x = nationality, y = n)) +
+  geom_col(fill = plasma(1)) +
+  coord_flip() +
+  labs(y = "Number of astronauts", x = "Nationality") +
+  scale_y_log10() +
+  theme_light()
+
 astro_data <- astro_data %>%
   mutate(age_selected = year_of_selection - year_of_birth) %>%
   group_by(name) %>%
   mutate(train_time = min(year_of_mission) - year_of_selection) %>%
-  ungroup()
+  ungroup() %>%
+  mutate(decade_sel = 10 * (year_of_selection %/% 10),
+         nationality_red = case_when(
+           nationality %in% c("U.S.", "U.S.S.R/Russia") ~ nationality,
+           TRUE ~ "Rest of the world"
+         ))
+```
+
+As the current data set has possibly multiple rows corresponding to the missions of an astronaut I create also a data set with just one row per astronaut that contains the most important facts around the individual. That means of course that no mission specific data is contained in the new `astro_data_ind` data set. As the further analysis will focus on the individual level and not the mission level one saves a lot of `group_by()` calls.
+
+```{r}
+astro_data_ind <- astro_data %>%
+  filter(mission_number == 1) %>%
+  select(-mission_number, -year_of_mission, -mission_title,
+         -ascend_shuttle, -in_orbit, -descend_shuttle,
+         -hours_mission, -field21, -eva_hrs_mission) 
+```
+
+\newpage
+
+## (2) Takeoff or statistical key numbers
+
+As I find the new variables `age_selected` and `train_time` very interesting they will be at the core of the further analysis. Thus a close look at the univariate distributions and key statistical features is performed now.
+
+### Selection age
+
+```{r}
+summary(astro_data_ind$age_selected)
+```
+One can see that overall the IQR of 6 is quite small. So most of the astronauts are selected in their early to mid thirties. The fact that the mean and median are quite close to each other indicates that the empirical distribution could be symmetric.
+The youngest astronaut to be selected was 23 years and the oldest 60 years old. Let's get to know the youngest and oldest to be selected:
+
+```{r}
+# the youngest
+astro_data_ind %>%
+  arrange(age_selected) %>%
+  select(name, age_selected, occupation, year_of_selection, nationality) %>%
+  head(4)
+```
+
+Clearly the youngest selected astronauts were all selected in the midst of the space race in the former U.S.S.R. 
+
+```{r}
+# the oldest
+astro_data_ind %>%
+  arrange(age_selected) %>%
+  select(name, age_selected, occupation, year_of_selection, nationality) %>%
+  tail(4)
+```
+
+The oldest selected astronauts are all space tourist but actually followed quite closely by a professional astronaut. The fact that space tourists are generally quite old when selected comes probably from the hefty price tag a trip to space as a tourist still has. Basically right now it is billionaires only. If Virgin Galactic and Blue Origin can keep their promises to make space travel more affordable in the upcoming years the average age of at least the commercial astronauts could decrease. 
+
+In order to get a really good sense of an univariate distribution I like to combine some different visualization techniques that let me grab not only the overall silhouette of the distribution (e.g. with KDE), but also statistical key numbers (e.g. through a boxplot) and most importantly also subtle details like discrete clusters of data points (e.g. suitable histogram). Moreover a jittered pointcloud can mitigate the general problem of boxplots that they could be shaped strongly by small point clusters especially in low sample size scenarios.
+
+
+```{r}
+age_selected_box <- ggplot(astro_data_ind, aes(x = 1, y = age_selected)) +
+  geom_jitter(alpha = 0.5, col = plasma(1), shape = 4) +
+  geom_boxplot(col = "black", size = .8, fill = NA) +
+  labs(x = "", y = "Selection age") +
+  coord_flip() +
+  theme_light() +
+  theme(axis.ticks.y = element_blank(),
+        axis.text.y = element_blank())
+
+age_selected_hist <- ggplot(astro_data_ind, aes(x = age_selected)) +
+  geom_histogram(aes(y = ..density..),
+                 fill = plasma(1), binwidth = 1.1,
+                 alpha = 0.5) +
+  geom_density(aes(y = ..density..),
+                 col = "black", size = 0.8) +
+  labs(x = "", y = "", subtitle = "Histogram binwidth = 1.1",
+       title = "Univariate view:  **Selection age**") +
+  theme_light() +
+  theme(axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        plot.title = ggtext::element_markdown(size = 11),
+        plot.subtitle = ggtext::element_markdown(size = 8))
+age_selected_hist / age_selected_box
+```
+
+Except for the outliers that produce an overall just slightly right skewed empirical distribution the empirical distribution is actually quite symmetric and bell shaped. As mentioned above most of the astronauts were selected in their early to mid thirties. 
+
+> **Hypothesis 1:** The selection age has changed over time and there are certain subgroups of astrounauts e.g. w.r.t. sex or occupation that show a different patterns regarding the selection age. 
+
+
+### Training time
+
+```{r}
+summary(astro_data_ind$train_time)
+```
+
+```{r}
+train_time_box <- ggplot(astro_data_ind, aes(x = 1, y = train_time)) +
+  geom_jitter(alpha = 0.5, col = plasma(1), shape = 4) +
+  geom_boxplot(col = "black", size = .8, fill = NA) +
+  labs(x = "", y = "Training time in years") +
+  coord_flip() +
+  theme_light() +
+  theme(axis.ticks.y = element_blank(),
+        axis.text.y = element_blank())
+
+train_time_hist <- ggplot(astro_data_ind, aes(x = train_time)) +
+  geom_histogram(aes(y = ..density..),
+                 fill = plasma(1), binwidth = 0.7,
+                 alpha = 0.5) +
+  geom_density(aes(y = ..density..),
+                 col = "black", size = 0.8) +
+  labs(x = "", y = "", subtitle = "Histogram binwidth = 0.8",
+       title = "Univariate view:  **Training time**") +
+  theme_light() +
+  theme(axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        plot.title = ggtext::element_markdown(size = 11),
+        plot.subtitle = ggtext::element_markdown(size = 8))
+train_time_hist / train_time_box
 ```
 
 
-## Get the game on or Statistical key numbers
-
-? map to countries
-? make a plot and highlight very important figures
-try to find some hidden gems the youngest the shortest and longest training period
-descriptive analysis of the univariate variables age selected and train time
-also effects over time
-
-## What you have been waiting for or Visualization and conclusion
 
 
+## (3) Apogee & splashdown or visualization & conclusion
+
+```{r}
+ggplot(astro_data_ind, aes(x = factor(decade_sel), y = age_selected)) +
+  geom_jitter(aes(size = calc_total_hrs), alpha = 0.5, shape = 4) +
+  geom_boxplot(col = "black", size = .8, fill = NA) +
+  labs(x = "Decade", y = "Selection Age") +
+  theme_light() 
+
+ggplot(astro_data_ind, aes(x = year_of_selection, y = age_selected)) +
+  geom_jitter(aes(size = calc_total_hrs, col = calc_total_hrs), alpha = 0.5) +
+  labs(x = "Selection year", y = "Selection Age") +
+  scale_color_viridis_c(option = "C") +
+  theme_light()
+
+ggplot(astro_data_ind, aes(x = factor(decade_sel), y = age_selected)) +
+  geom_jitter(aes(col = total_number_of_missions), alpha = 0.5, shape = 8) +
+  geom_boxplot(col = "black", size = .8, fill = NA) +
+  labs(x = "Decade", y = "Selection Age") +
+  theme_light() 
+
+ggplot(astro_data_ind, aes(x = factor(decade_sel), y = train_time)) +
+  geom_jitter(alpha = 0.5, col = plasma(1), shape = 4) +
+  geom_boxplot(col = "black", size = .8, fill = NA) +
+  labs(x = "", y = "Training time in years") +
+  theme_light() 
+```
 
 
+```{r}
+ggplot(astro_data_ind, aes(x = year_of_selection, y = age_selected, col = occupation)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F, formula = 'y ~ x') +
+  scale_color_viridis_d(option = "C") +
+  theme_light()
+```
+
+```{r}
+ggplot(astro_data_ind, aes(x = year_of_selection, y = age_selected, col = military_civilian)) +
+  geom_point() +
+  geom_smooth(method = "loess", se = F, formula = 'y ~ x') +
+  scale_color_viridis_d(option = "C") +
+  theme_light()
+
+ggplot(astro_data_ind, aes(x = year_of_selection, y = age_selected, col = sex)) +
+  geom_point() +
+  geom_smooth(method = "loess", se = F, formula = 'y ~ x') +
+  scale_color_viridis_d(option = "C") +
+  theme_light()
+```
 
 
 
