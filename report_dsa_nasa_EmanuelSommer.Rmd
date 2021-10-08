@@ -9,7 +9,7 @@ knitr::opts_chunk$set(echo = TRUE, rows.print = 20)
 ```
 
 ```{r, echo=FALSE, fig.align='right', out.width="30%"}
-knitr::include_graphics("cooperation.jpg")
+knitr::include_graphics("img/cooperation.jpg")
 ```
 
 
@@ -23,16 +23,19 @@ knitr::include_graphics("cooperation.jpg")
 
 \
 
-Hi, my name is Emanuel and I am a 23 year old master student of mathematics. Besides of being into data and R programming I am absolutely inspired and fascinated by space travel. I am not that guy who is into the astrophysics and aliens part but projects like *Artemis* (Moon $\rightarrow$ Mars) are so inspiring for me as they display how humanity can achieve tremendous goals through teamwork, ingenuity and innovation. And for real who hasn't dreamed about a selfie in space :D. So why not try to find under major simplifications of course at roughly what age I should be drafted into the elite team of astronauts and how much time I have left to become worthy ;).
+Hi, my name is Emanuel and I am a 23 year old master student of mathematics. Besides of being into data and R programming I am absolutely inspired and fascinated by space travel. I am not that guy who is into the astrophysics and aliens part but projects like *Artemis* (Moon $\rightarrow$ Mars) are so inspiring for me as they display how humanity can achieve tremendous goals through teamwork, ingenuity and innovation. And for real who hasn't dreamed about a selfie in space :D. So why not try to find out under major simplifications of course at roughly what age I should be drafted into the elite team of astronauts and how much time I have left to become worthy ;).
 
 ```{r, echo=FALSE, fig.align='center', out.width="50%"}
-knitr::include_graphics("astronaut_cool.jpg")
+knitr::include_graphics("img/astronaut_cool.jpg")
+# free image
 ```
 
 First of all the R packages used:
 
 ```{r, results = 'hide', message=FALSE, warning=FALSE}
+# the general toolbox
 library(tidyverse)
+# extras for appealing visuals
 library(viridis)
 library(patchwork)
 library(ggtext)
@@ -51,6 +54,7 @@ Read in the data and get a first glimpse at the variables.
 
 ```{r, message=FALSE, warning=FALSE}
 astro_data <- read_csv("astronauts.csv")
+glimpse(astro_data)
 ```
 
 The next step is to detect outliers and missing data. Having this done one can decide on a strategy to deal with those.
@@ -421,7 +425,7 @@ astro_data_ind %>%
 
 The oldest selected astronauts are all space tourist but actually followed quite closely by a professional astronaut. The fact that space tourists are generally quite old when selected comes probably from the hefty price tag a trip to space as a tourist still has. Basically right now it is billionaires only. If Virgin Galactic and Blue Origin can keep their promises to make space travel more affordable in the upcoming years the average age of at least the commercial astronauts could decrease. 
 
-In order to get a really good sense of an univariate distribution I like to combine some different visualization techniques that let me grab not only the overall silhouette of the distribution (e.g. with KDE), but also statistical key numbers (e.g. through a boxplot) and most importantly also subtle details like discrete clusters of data points (e.g. suitable histogram). Moreover a jittered pointcloud can mitigate the general problem of boxplots that they could be shaped strongly by small point clusters especially in low sample size scenarios.
+In order to get a really good sense of an univariate distribution I like to combine some different visualization techniques that let me grab not only the overall silhouette of the distribution (e.g. with KDE), but also statistical key numbers (e.g. through a boxplot) and most importantly also subtle details like discrete clusters of data points (e.g. suitable histogram). Moreover a jittered pointcloud can mitigate the general problem of boxplots that they could be shaped strongly by small point clusters especially in low sample size scenarios. Note that for most of the upcoming scatterplots will use jittering so please be aware of that w.r.t. interpretation.
 
 
 ```{r}
@@ -446,7 +450,7 @@ age_selected_hist <- ggplot(astro_data_ind, aes(x = age_selected)) +
 age_selected_hist / age_selected_box
 ```
 
-Except for the outliers that produce an overall just slightly right skewed empirical distribution the empirical distribution is actually quite symmetric and bell shaped. As mentioned above most of the astronauts were selected in their early to mid thirties. 
+Except for the outliers that produce an overall just slightly right skewed empirical distribution the empirical distribution is actually quite symmetric and bell shaped. As mentioned above most of the astronauts were selected in their early to mid thirties. A transformation of the data is not reasonable at this point.
 
 > **Hypothesis:** The selection age has changed over time and there are certain subgroups of astrounauts e.g. w.r.t. sex or occupation that show different patterns regarding the selection age. Were the selection ages of the astronauts of the space race lower and then grew over time. What were the selection ages of very successfull astronauts?
 
@@ -503,6 +507,7 @@ train_time_hist <- ggplot(astro_data_ind, aes(x = train_time)) +
         axis.text.y = element_blank(),)
 train_time_hist / train_time_box
 ```
+
 -->
 
 \newpage
@@ -530,11 +535,11 @@ ggplot(astro_data_ind, aes(x = factor(decade_sel), y = age_selected)) +
 plot_layout(widths = c(6, 5))
 ```
 
-So indeed the data shows an overall positive trend that indicates an average selection age of roughly in the early thirties during the space race in the 1960ies that rises steadily until reaching a level of roughly 37 years in the 2010s. In the right plot that shows grouped boxplots w.r.t. the decade interesting enough the first an last boxplot contradict the overall trend somehow, in the first case this is probably due to the really small sample and in the latter case this could be due to the fact that the U.S. has lost it's capability to launch people into space due to the last space shuttle mission being in 2011. Only in the last years the U.S. regained the ability to put people into space with the Crew Dragon spacecraft. This could explain the reduced number of astronauts selected in this decade and gives rise to the question whether different nations select astronauts at differing ages. The rate of growth of the selection age overall also seems to dampen. So the average selection age will probably reach a stationary point somewhere below the average age of a working person for example 40. But before making such forecasts one should have a look at the other variables w.r.t. selection age.
+So indeed the data shows an overall positive trend that indicates an average selection age of roughly in the early thirties during the space race in the 1960ies that rises steadily until reaching a level of roughly 37 years in the 2010s. In the right plot that shows grouped boxplots w.r.t. the decade interesting enough the first an last boxplot contradict the overall trend somehow, in the first case this is probably due to the really small sample and in the latter case this could be due to the fact that the U.S. has lost it's capability to launch people into space due to the last space shuttle mission being in 2011. Only in the last years the U.S. regained the ability to put people into space with the Crew Dragon spacecraft. This could explain the reduced number of astronauts selected in this decade and gives rise to the question whether different nations select astronauts at differing ages. Does the U.S. select older astronauts? The rate of growth of the selection age overall also seems to dampen. So the average selection age will probably reach a stationary point somewhere a little below the average age of a working person for example 40. But before making such forecasts one should have a look at the other variables w.r.t. selection age.
 
 ### Selection age w.r.t. categories
 
-First of all one can look at the categorical variables and their influence on the evolution of the selection age.
+Now one can look at the categorical variables and their relationship with the evolution of the selection age.
 
 - `sex`
 - `nationality_red` just compare the two biggest space nations so far and the rest of the world.
@@ -572,8 +577,12 @@ ggplot(astro_data_ind, aes(x = factor(sex), y = age_selected,
 # get the desired layout
 plot_layout(widths = c(2, 1))
 ```
+
+First and foremost it has to be mentioned that with only a fraction of `r round(mean(astro_data_ind$sex == "female"),3)` a lot less women than men have gone to space yet. But when looking at the Artemis team one can detect a 50:50 ratio of women and men. So this seems to go into the right direction at least concerning NASA. But besides that when looking at the above plot it seems evident that both the selection age of female and male astronauts follows a similar rising trend but with the distinct difference that female astronauts are selected roughly 3-5 years early than their male colleagues. Moreover no female older than 50 was selected to become an astronaut. Yes I know Jeff launched a really old woman and really young man into space recently (suborbital) but they are just commercial astronauts and I have not forgotten the Inspiration 4 crew but now focus on the professional ones. Overall I am not quite sure why female astronauts are selected earlier and maybe a smart guy from NASA would have a reasonable explanation for me as the difference is notable.
+
+
 ```{r}
-# conditional scatterplot -wrt sex- of the selection age over time
+# conditional scatterplot -wrt military status- of the selection age over time
 ggplot(astro_data_ind, aes(x = year_of_selection, y = age_selected,
                            col = factor(nationality_red))) +
   geom_jitter(aes(shape = factor(nationality_red)),
@@ -609,8 +618,11 @@ ggplot(astro_data_ind, aes(x = factor(nationality_red), y = age_selected,
 plot_layout(widths = c(3, 2))
 ```
 
+Visible in this plot is not only that until the late 1970s the space was the playground for only two big nations but that between these two nations and the rest of the world is a difference in the selection ages of their astronauts. The overall rising trend of the selection age is true for all three classes. Right from the beginning of the space exploration U.S. astronauts are selected at on average at least 2 years later than U.S.S.R/Russian astronauts. This gap seemed to widen after the mid 1990s as the U.S. has selected more and more older astronauts while Russia has been quite constant at an age roughly in the early 30s. The same rise in average selection age in the mid 1990s seemed to happen for the class rest of the world. This could be a change in dogma of the NASA which could have been adapted by the ESA and JAXA which work quite closely with NASA and until now ESA/ JAXA astronauts did make up a considerable portion of rest of the world astronauts.
+
+
 ```{r}
-# conditional scatterplot -wrt sex- of the selection age over time
+# conditional scatterplot -wrt military status- of the selection age over time
 ggplot(astro_data_ind, aes(x = year_of_selection, y = age_selected,
                            col = factor(military_civilian))) +
   geom_jitter(aes(shape = factor(military_civilian)),
@@ -642,8 +654,13 @@ ggplot(astro_data_ind, aes(x = factor(military_civilian), y = age_selected,
 plot_layout(widths = c(2, 1))
 ```
 
+Surprisingly enough it does not seem to be a considerable interdependence of the military status and the selection age over time.
+
+
+
+
 ```{r}
-# conditional scatterplot -wrt sex- of the selection age over time
+# conditional scatterplot -wrt occupation- of the selection age over time
 ggplot(astro_data_ind, aes(x = year_of_selection, y = age_selected,
                            col = factor(occupation))) +
   geom_jitter(alpha = 0.1, height = 0) +
@@ -667,19 +684,50 @@ ggplot(astro_data_ind, aes(x = factor(occupation), y = age_selected,
        subtitle = "by occupation") 
 ```
 
-### You got selected but how long are you gonna be trained
 
-Scatter train vs age selected
+The condensed take away information of these two plots is that other than for professional astronauts that are selected mainly during their 30s the space tourists selection age can spread over a much higher range as not qualification and prime cognitive and physical abilities are needed but mostly a big wallet. This is I guess common sense. Otherwise no occupation class stood really out besides maybe the Payload Specialist being a little older and the lower blue line corresponding to the occupation commander is most likely lower due to the class being used mainly from the U.S.S.R/Russia and as seen above they selected at a younger age on average over time.
 
+
+### You got selected but how long are you gonna be trained?
+
+Is there a relationship like the older you get selected the shorter or longer the training time? Let's find out.
+
+```{r}
+astro_data_ind %>%
+  mutate(professional = occupation != "Space tourist") %>%
+  ggplot(aes(x = train_time, y = age_selected, col = factor(professional))) +
+    geom_jitter(alpha = 0.3, width = 0) +
+    labs(x = "Training time", y = "Selection age",
+         title = "**Selection age w.r.t. training time**",
+         subtitle = paste0("by ",
+                        "<span style='color:",
+                        plasma(3)[2],
+                        "'>**professional astronaut**</span>",
+                        " and ",
+                        "<span style='color:",
+                        plasma(3)[1],
+                        "'>**space tourist**</span>",
+                        ".")) +
+    geom_smooth(method = "loess", se = F, formula = 'y ~ x', size = 0.8,
+                col = "black") +
+    guides(col = "none") +
+    scale_color_manual(values = plasma(3)[1:2])
+```
+
+Clearly space tourists have quite short training times of at most 2 years and thus contribute to the slight trend that the older you get the shorter the training time until the first flight. But this effect seems to be quite weak. So overall when thinking of my selfie in space I would probably have to go through a median training time of `r round(median(astro_data_ind$train_time))` years quite independent of the age selected and neglecting other effects on training time like nationality.
 
 
 ### Selection age w.r.t. greatest achievements
 
+Let's assume one gets selected. To have a higher likelihood of making great space selfies high values of the following variables are good to have:
 
+- `calc_total_hrs` the total amount of time spend in space.
+- `total_eva_hrs` the total amount of time on EVA.
+- `total_number_of_missions`.
 
-- total number of missions
-- total eva hours
-- calc total hours
+Is there a relationship of these key astronaut CV numbers with the age they were selected? It would make kind of sense if earlier selected astronauts would be able to accumulate more EVA and overall space time, right?
+
+In order to address these questions again some visualizations with the (not always unique) record holders w.r.t. one of the above mentioned variables by the decade.
 
 
 ```{r}
@@ -722,6 +770,20 @@ astro_data_ind %>%
    
 
 ```
+
+
+So there are some interesting takeaways here:
+- The astronauts selected in the 1960s had quite short total in space time. As the first space stations evolved starting in the early 1970s this could be a reason for the shorter career stats.
+- One can see that overall U.S.S.R/Russia has provided the most decade record holders here.
+- The overall trend is that the older one gets the less likely is it to have an extremely long space journey. But for example Andrei Borisenko was selected at an age of 39 years and spend a looot of time in space! So in general here not really the earlier the better but a selection age of below 40 seems to be a good spot with the goal of many space hours in mind.
+
+```{r, echo=FALSE, fig.align='center', out.width="50%", fig.cap='Andrei Borisenko on the ISS'}
+knitr::include_graphics("img/Cosmonaut-Andrei-Borisenko.png")
+# https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.researchgate.net%2Ffigure%2FCosmonaut-Andrei-Borisenko-at-the-experimental-workstation-on-board-the-ISS_fig2_334230798&psig=AOvVaw1TMYwP1On1hnVWZnzKDu5K&ust=1633779849100000&source=images&cd=vfe&ved=0CAsQjRxqFwoTCODb0bfeuvMCFQAAAAAdAAAAABAD
+```
+
+
+
 ```{r}
 # extract the astronauts with the most time spend during eva per decade selected
 max_eva_spend_per_decade <- astro_data_ind %>%
@@ -757,6 +819,16 @@ astro_data_ind %>%
     scale_x_continuous(breaks = seq(1960, 2010, 10)) +
     theme(panel.grid.minor.x = element_blank())
 ```
+
+Again a similar picture as before emerges. I found it really interesting that Alan Shepard who is undoubtedly a superstar of space travel holds the record for the longest EVA time for astronauts selected in the 1950s. He is definitely known to be the first American astronaut but at least I did not now that he was the 5th man on the moon and was even golfing on the moon :). I mean how cool is that, he took a golf racket and two balls to the moon. If you wonder the ball went 37 meters. 
+
+```{r, echo=FALSE, fig.align='center', out.width="50%", fig.cap='Alan Shepard playing golf on the moon'}
+knitr::include_graphics("img/Shepard_golf.png")
+# https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.watson.ch%2Funvergessen%2Fraumfahrt%2F697017243-06-02-1971-alan-shepard-schmuggelt-einen-schlaeger-auf-den-mond-um-golf-zu-spielen&psig=AOvVaw0wX7zKJkiG4Qd33H1Lbh0Y&ust=1633779671071000&source=images&cd=vfe&ved=0CAsQjRxqFwoTCMj41eDduvMCFQAAAAAdAAAAABAD
+```
+
+Besides these fun facts again the selection age does not really seem to influence the possibility to have many EVA hours that much, so again a selection age of below 40 should be a good starting point. Moreover except for Alan Shepard the record holders seem to follow a positive trend but I will not try to further forecast based on these 6 extraordinary people as this is more of fun fact material and not rigorous evidence.
+
 
 ```{r}
 # extract the astronauts with the most missions per decade selected
@@ -797,22 +869,23 @@ astro_data_ind %>%
     theme(panel.grid.minor.x = element_blank())
 ```
 
+First of all who is Jerry Ross? He appears already the second time and I have never heard of him. Turns out he is a real astronaut hall-of-famer! He is the first human to complete 7 space missions, spend 58 days in space and 58 hours outside the vehicle, aren't these stats great?
+
+```{r, echo=FALSE, fig.align='center', out.width="30%", fig.cap='Jerry Ross with his 7 mission badges'}
+knitr::include_graphics("img/Jerry_Ross.jpg")
+# https://www.google.com/url?sa=i&url=https%3A%2F%2Fde.wikipedia.org%2Fwiki%2FJerry_Ross&psig=AOvVaw0x2VZmr3tol_qWg091lve2&ust=1633779482010000&source=images&cd=vfe&ved=0CAsQjRxqFwoTCMDhuoPeuvMCFQAAAAAdAAAAABAD
+```
+
+And once again a similar picture as for the last two plots is visible. Although her quite a considerable mass of people with a lot of missions was selected before their 35th birthday, so again a slight tendency towards an early selection.
+
+
 ### So when can I expect to make that space selfie?
 
+To conclude there is not **the** age you should be selected to become an astronaut with a lot of EVA hours or other high career stats. Overall a trend over time towards the selection of astronauts at a higher age (early $\rightarrow$ late thirties) was detected and it turned out that the sex and nationality of the to be astronaut were the most influential features w.r.t. the selection age. I actually expected the military status to have an effect but at least at the bivariate level this was not the case. One could of course get an even better sense for higher order and joint dependencies and influence by modeling the data with vine-copulas, various regression or other models but this is a task for another time. Besides if you are a space tourist selection age is not even a thing, just be moderately healthy and filthy rich. As I am a 23 year old male, not filthy rich and from Germany I will probably have roughly 15 years (then my late 30s) in order to get worthy of becoming an astronaut and then making that gorgeous space selfie. Additionally I do not have to stress myself as it was visible that unless you are selected way beyond the 40s there is still the chance to accumulate a quite impressive space portfolio even with a high selection age. So who knows, with a the median training time of 6 years I might gaze down on earth in 20 years while a space drone takes an amazing 'selfie' of me ;D.
+
+**Thanks for sticking with it!**
 
 
-
-
-
-
-
-```{r}
-ggplot(astro_data_ind, aes(x = factor(decade_sel), y = train_time)) +
-  geom_jitter(col = plasma(1), alpha = 0.1) +
-  geom_boxplot(col = "black", size = .8, fill = NA) +
-  labs(x = "Decade", y = "Training time",
-       title = "**Evolution of the training time**")
-```
 
 
 

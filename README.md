@@ -1,5 +1,5 @@
 # NASA Hackathon
-![](cooperation.jpg?raw=true "NASA Hackathon")
+![](img/cooperation.jpg?raw=true "NASA Hackathon")
 
 - [Example Report](https://83dc9fb9-e95b-4423-a6be-df0aa5024d85.filesusr.com/ugd/64484b_474a7c0468684c0eb46465fc52ebbd29.pdf) (careful pdf!)  
 - [Criteria for Evaluation](https://www.dsa-muc.com/nasa-hackathon) (scroll down a bit)  
