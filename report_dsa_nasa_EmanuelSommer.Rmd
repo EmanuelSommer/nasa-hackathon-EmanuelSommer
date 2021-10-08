@@ -1,5 +1,7 @@
 ---
-output: pdf_document
+output: 
+  pdf_document:
+    df_print: kable
 ---
 
 ```{r setup, include=FALSE}
@@ -15,17 +17,16 @@ knitr::include_graphics("cooperation.jpg")
 <br>
 <br>
 
-# How many years do I have left to become an astronaut?
+# When is the prime time to be selected to fly to space?
 
 #### Report of Emanuel Sommer for the Nasa Hackaton of the DSA Munich
 
 \
 
-Hi, my name is Emanuel and I am a 23 year old master student of mathematics. Besides of being into data and R programming I am absolutely inspired and fascinated by space travel. I am not that guy who is into the astrophysics and aliens part but projects like *Artemis* (Moon $\rightarrow$ Mars) are so inspiring for me as they display how humanity can achieve tremendous goals through teamwork, ingenuity and innovation. And for real who hasn't dreamed about a selfie in space ;D.
+Hi, my name is Emanuel and I am a 23 year old master student of mathematics. Besides of being into data and R programming I am absolutely inspired and fascinated by space travel. I am not that guy who is into the astrophysics and aliens part but projects like *Artemis* (Moon $\rightarrow$ Mars) are so inspiring for me as they display how humanity can achieve tremendous goals through teamwork, ingenuity and innovation. And for real who hasn't dreamed about a selfie in space :D. So why not try to find under major simplifications of course at roughly what age I should be drafted into the elite team of astronauts and how much time I have left to become worthy ;).
 
 ```{r, echo=FALSE, fig.align='center', out.width="50%"}
 knitr::include_graphics("astronaut_cool.jpg")
-library(knitr)
 ```
 
 First of all the R packages used:
@@ -35,6 +36,11 @@ library(tidyverse)
 library(viridis)
 library(patchwork)
 library(ggtext)
+theme_set(
+  theme_light() +
+    theme(plot.title = ggtext::element_markdown(size = 11),
+          plot.subtitle = ggtext::element_markdown(size = 8))
+)
 ```
 
 \newpage
@@ -105,7 +111,7 @@ astro_data$name[astro_data$id == 447] <- "Aleksandrov, Alexandar"
 ```
 
 
-From this one can conclude that now one can use the `name` variable as the main key for a single astronaut as there are no missing values. As the only missing values occur in the variables `original_name`, once in the `selection` and once in the `ascent_shuttle` and `descent_shuttle` for the same mission in the latter cases one does not have to remove them in this particular case. This is because these variables will not play a crucial role in the further analysis.
+From this one can conclude that now one can use the `name` variable as the main key for a single astronaut as there are no missing values. As the only missing values occur in the variables `original_name`, once in the `selection`, `mission_title` and in the `ascent_shuttle` and `descent_shuttle` for the same mission in the latter cases one does not have to remove them in this particular case. This is because these variables will not play a crucial role in the further analysis.
 
 As shown below mostly the categorical features have quite many classes and thus are not easily checkable manually, for variables with less then 20 classes this is manageable.
 
@@ -359,8 +365,7 @@ astro_data %>%
   geom_col(fill = plasma(1)) +
   coord_flip() +
   labs(y = "Number of astronauts", x = "Nationality") +
-  scale_y_log10() +
-  theme_light()
+  scale_y_log10()
 
 astro_data <- astro_data %>%
   mutate(age_selected = year_of_selection - year_of_birth) %>%
@@ -388,9 +393,7 @@ astro_data_ind <- astro_data %>%
 
 ## (2) Takeoff or statistical key numbers
 
-As I find the new variables `age_selected` and `train_time` very interesting they will be at the core of the further analysis. Thus a close look at the univariate distributions and key statistical features is performed now.
-
-### Selection age
+So in order to take my selfie in space I have to be selected and to be selected I have to put in some work to become worthy. So the question is how much in a hurry should I be? Thus the new variable `age_selected` will be at the core of the further analysis in order to find out a reasonable or even a perfect(?) selection age for me. On the way I might also stumble upon a nice more general hypothesis to check:). To accomplish this a close look at the univariate distribution and key statistical features is a good first step.
 
 ```{r}
 summary(astro_data_ind$age_selected)
@@ -427,7 +430,6 @@ age_selected_box <- ggplot(astro_data_ind, aes(x = 1, y = age_selected)) +
   geom_boxplot(col = "black", size = .8, fill = NA) +
   labs(x = "", y = "Selection age") +
   coord_flip() +
-  theme_light() +
   theme(axis.ticks.y = element_blank(),
         axis.text.y = element_blank())
 
@@ -439,113 +441,378 @@ age_selected_hist <- ggplot(astro_data_ind, aes(x = age_selected)) +
                  col = "black", size = 0.8) +
   labs(x = "", y = "", subtitle = "Histogram binwidth = 1.1",
        title = "Univariate view:  **Selection age**") +
-  theme_light() +
   theme(axis.ticks.y = element_blank(),
-        axis.text.y = element_blank(),
-        plot.title = ggtext::element_markdown(size = 11),
-        plot.subtitle = ggtext::element_markdown(size = 8))
+        axis.text.y = element_blank())
 age_selected_hist / age_selected_box
 ```
 
 Except for the outliers that produce an overall just slightly right skewed empirical distribution the empirical distribution is actually quite symmetric and bell shaped. As mentioned above most of the astronauts were selected in their early to mid thirties. 
 
-> **Hypothesis 1:** The selection age has changed over time and there are certain subgroups of astrounauts e.g. w.r.t. sex or occupation that show a different patterns regarding the selection age. 
+> **Hypothesis:** The selection age has changed over time and there are certain subgroups of astrounauts e.g. w.r.t. sex or occupation that show different patterns regarding the selection age. Were the selection ages of the astronauts of the space race lower and then grew over time. What were the selection ages of very successfull astronauts?
 
+In order to find indications for or against this hypothesis the multivariate dependencies with other variables have to be examined in the next part.
 
+<!--
 ### Training time
 
 ```{r}
 summary(astro_data_ind$train_time)
 ```
 
+One can see that overall the IQR of 5 is again quite small. So most of the astronauts are 3 to 8 years until their first mission. The fact that the mean and median are quite close to each other indicates again that the empirical distribution could be symmetric.
+The maximum training time of 21 years is really far from the 3rd quantile, and of course the training time is bounded from below by 0. So it is interesting to have a look at the corner cases i.e. how many astronauts had their first mission in the same year they were selected and what about those who had a really long training time.
+
+```{r}
+astro_data_ind %>%
+  arrange(train_time) %>%
+  select(name, train_time, occupation, year_of_selection, nationality) %>%
+  filter(train_time == 0) %>%
+  group_by(nationality) %>%
+  summarise(n = n())
+```
+
+
+```{r}
+astro_data_ind %>%
+  arrange(train_time) %>%
+  select(name, train_time, occupation, year_of_selection, nationality) %>%
+  tail(4)
+```
+
+
 ```{r}
 train_time_box <- ggplot(astro_data_ind, aes(x = 1, y = train_time)) +
   geom_jitter(alpha = 0.5, col = plasma(1), shape = 4) +
   geom_boxplot(col = "black", size = .8, fill = NA) +
   labs(x = "", y = "Training time in years") +
+  scale_y_continuous(breaks = seq(0, 20, 2)) +
   coord_flip() +
-  theme_light() +
   theme(axis.ticks.y = element_blank(),
         axis.text.y = element_blank())
 
 train_time_hist <- ggplot(astro_data_ind, aes(x = train_time)) +
   geom_histogram(aes(y = ..density..),
-                 fill = plasma(1), binwidth = 0.7,
+                 fill = plasma(1), binwidth = 1,
                  alpha = 0.5) +
   geom_density(aes(y = ..density..),
-                 col = "black", size = 0.8) +
-  labs(x = "", y = "", subtitle = "Histogram binwidth = 0.8",
+                 col = "black", size = .8) +
+  labs(x = "", y = "", subtitle = "Histogram binwidth = 1",
        title = "Univariate view:  **Training time**") +
-  theme_light() +
+  scale_x_continuous(breaks = seq(0, 20, 2)) +
   theme(axis.ticks.y = element_blank(),
-        axis.text.y = element_blank(),
-        plot.title = ggtext::element_markdown(size = 11),
-        plot.subtitle = ggtext::element_markdown(size = 8))
+        axis.text.y = element_blank(),)
 train_time_hist / train_time_box
 ```
+-->
 
-
-
+\newpage
 
 ## (3) Apogee & splashdown or visualization & conclusion
 
-```{r}
-ggplot(astro_data_ind, aes(x = factor(decade_sel), y = age_selected)) +
-  geom_jitter(aes(size = calc_total_hrs), alpha = 0.5, shape = 4) +
-  geom_boxplot(col = "black", size = .8, fill = NA) +
-  labs(x = "Decade", y = "Selection Age") +
-  theme_light() 
+### Selection age over time
 
+```{r}
+# jittered scatterplot of selection age vs time
 ggplot(astro_data_ind, aes(x = year_of_selection, y = age_selected)) +
-  geom_jitter(aes(size = calc_total_hrs, col = calc_total_hrs), alpha = 0.5) +
-  labs(x = "Selection year", y = "Selection Age") +
-  scale_color_viridis_c(option = "C") +
-  theme_light()
-
+  geom_jitter(alpha = 0.2, col = plasma(1), height = 0) +
+  labs(x = "Selection year", y = "Selection age",
+       title = "**Evolution of the selection age**") +
+  geom_smooth(method = "loess", se = F, formula = 'y ~ x', size = 0.8,
+              col = "black") +
+  scale_x_continuous(breaks = seq(1960, 2010, 10)) +
+  theme(panel.grid.minor.x = element_blank()) +
+# grouped boxplots by decade
 ggplot(astro_data_ind, aes(x = factor(decade_sel), y = age_selected)) +
-  geom_jitter(aes(col = total_number_of_missions), alpha = 0.5, shape = 8) +
+  geom_jitter(col = plasma(1), alpha = 0.1) +
   geom_boxplot(col = "black", size = .8, fill = NA) +
-  labs(x = "Decade", y = "Selection Age") +
-  theme_light() 
+  labs(x = "Decade", y = "") +
+# get the desired layout
+plot_layout(widths = c(6, 5))
+```
 
+So indeed the data shows an overall positive trend that indicates an average selection age of roughly in the early thirties during the space race in the 1960ies that rises steadily until reaching a level of roughly 37 years in the 2010s. In the right plot that shows grouped boxplots w.r.t. the decade interesting enough the first an last boxplot contradict the overall trend somehow, in the first case this is probably due to the really small sample and in the latter case this could be due to the fact that the U.S. has lost it's capability to launch people into space due to the last space shuttle mission being in 2011. Only in the last years the U.S. regained the ability to put people into space with the Crew Dragon spacecraft. This could explain the reduced number of astronauts selected in this decade and gives rise to the question whether different nations select astronauts at differing ages. The rate of growth of the selection age overall also seems to dampen. So the average selection age will probably reach a stationary point somewhere below the average age of a working person for example 40. But before making such forecasts one should have a look at the other variables w.r.t. selection age.
+
+### Selection age w.r.t. categories
+
+First of all one can look at the categorical variables and their influence on the evolution of the selection age.
+
+- `sex`
+- `nationality_red` just compare the two biggest space nations so far and the rest of the world.
+- `military_civilian`
+- `occupation`
+
+```{r}
+# conditional scatterplot -wrt sex- of the selection age over time
+ggplot(astro_data_ind, aes(x = year_of_selection, y = age_selected,
+                           col = factor(sex))) +
+  geom_jitter(aes(shape = factor(sex)), alpha = 0.2, height = 0) +
+  labs(x = "Selection year", y = "Selection age",
+       title = "**Evolution & distribution of the selection age**",
+       subtitle = paste("by",
+                        "<span style='color:",
+                        plasma(3)[1],
+                        "'>**female**</span>",
+                        " and ",
+                        "<span style='color:",
+                        plasma(3)[2],
+                        "'>**male**</span>",
+                        " astronauts")) +
+  geom_smooth(method = "loess", se = F, formula = 'y ~ x', size = 0.8) +
+  scale_color_manual(values = plasma(3)[1:2]) +
+  scale_x_continuous(breaks = seq(1960, 2010, 10)) +
+  guides(col = "none", shape = "none") +
+  theme(panel.grid.minor.x = element_blank()) +
+# compare the conditional distributions with side to side boxplots
+ggplot(astro_data_ind, aes(x = factor(sex), y = age_selected,
+                           col = factor(sex))) +
+  geom_boxplot(size = .8, fill = NA) +
+  scale_color_manual(values = plasma(3)[1:2]) +
+  guides(col = "none") +
+  labs(x = "Sex", y = "") +
+# get the desired layout
+plot_layout(widths = c(2, 1))
+```
+```{r}
+# conditional scatterplot -wrt sex- of the selection age over time
+ggplot(astro_data_ind, aes(x = year_of_selection, y = age_selected,
+                           col = factor(nationality_red))) +
+  geom_jitter(aes(shape = factor(nationality_red)),
+              alpha = 0.1, height = 0) +
+  labs(x = "Selection year", y = "Selection age",
+       title = "**Evolution & distribution of the selection age**",
+       subtitle = paste("by",
+                        "<span style='color:",
+                        plasma(4)[2],
+                        "'>**U.S.**</span>",
+                        ", ",
+                        "<span style='color:",
+                        plasma(4)[3],
+                        "'>**U.S.S.R/Russia**</span>",
+                        " and ",
+                        "<span style='color:",
+                        plasma(4)[1],
+                        "'>**rest of the world**</span>",
+                        " astronauts")) +
+  geom_smooth(method = "loess", se = F, formula = 'y ~ x', size = 0.8) +
+  scale_color_manual(values = plasma(4)[1:3]) +
+  scale_x_continuous(breaks = seq(1960, 2010, 10)) +
+  guides(col = "none", shape = "none") +
+  theme(panel.grid.minor.x = element_blank()) +
+# compare the conditional distributions with side to side boxplots
+ggplot(astro_data_ind, aes(x = factor(nationality_red), y = age_selected,
+                           col = factor(nationality_red))) +
+  geom_boxplot(size = .8, fill = NA) +
+  scale_color_manual(values = plasma(4)[1:3]) +
+  guides(col = "none") +
+  labs(x = "Nation(s)", y = "") +
+# get the desired layout
+plot_layout(widths = c(3, 2))
+```
+
+```{r}
+# conditional scatterplot -wrt sex- of the selection age over time
+ggplot(astro_data_ind, aes(x = year_of_selection, y = age_selected,
+                           col = factor(military_civilian))) +
+  geom_jitter(aes(shape = factor(military_civilian)),
+              alpha = 0.2, height = 0) +
+  labs(x = "Selection year", y = "Selection age",
+       title = "**Evolution & distribution of the selection age**",
+       subtitle = paste("by",
+                        "<span style='color:",
+                        plasma(3)[2],
+                        "'>**military**</span>",
+                        " and ",
+                        "<span style='color:",
+                        plasma(3)[1],
+                        "'>**civilian**</span>",
+                        " status astronauts")) +
+  geom_smooth(method = "loess", se = F, formula = 'y ~ x', size = 0.8) +
+  scale_color_manual(values = plasma(3)[1:2]) +
+  scale_x_continuous(breaks = seq(1960, 2010, 10)) +
+  guides(col = "none", shape = "none") +
+  theme(panel.grid.minor.x = element_blank()) +
+# compare the conditional distributions with side to side boxplots
+ggplot(astro_data_ind, aes(x = factor(military_civilian), y = age_selected,
+                           col = factor(military_civilian))) +
+  geom_boxplot(size = .8, fill = NA) +
+  scale_color_manual(values = plasma(3)[1:2]) +
+  guides(col = "none") +
+  labs(x = "Military status", y = "") +
+# get the desired layout
+plot_layout(widths = c(2, 1))
+```
+
+```{r}
+# conditional scatterplot -wrt sex- of the selection age over time
+ggplot(astro_data_ind, aes(x = year_of_selection, y = age_selected,
+                           col = factor(occupation))) +
+  geom_jitter(alpha = 0.1, height = 0) +
+  labs(x = "Selection year", y = "Selection age",
+       title = "**Evolution of the selection age**",
+       subtitle = "by occupation") +
+  geom_smooth(method = "loess", se = F, formula = 'y ~ x', size = 0.8) +
+  scale_color_manual(values = plasma(7)[1:6], name = "Occupation") +
+  scale_x_continuous(breaks = seq(1960, 2010, 10)) +
+  # guides(col = "none", shape = "none") +
+  theme(panel.grid.minor.x = element_blank()) 
+# compare the conditional distributions with side to side boxplots
+ggplot(astro_data_ind, aes(x = factor(occupation), y = age_selected,
+                           col = factor(occupation))) +
+  geom_boxplot(size = .8, fill = NA) +
+  scale_color_manual(values = plasma(7)[1:6]) +
+  guides(col = "none") +
+  coord_flip() +
+  labs(x = "", y = "Selection age",
+       title = "**Distribution of the selection age**",
+       subtitle = "by occupation") 
+```
+
+### You got selected but how long are you gonna be trained
+
+Scatter train vs age selected
+
+
+
+### Selection age w.r.t. greatest achievements
+
+
+
+- total number of missions
+- total eva hours
+- calc total hours
+
+
+```{r}
+# extract the astronauts with the most time spend in space per decade selected
+max_time_spend_per_decade <- astro_data_ind %>%
+  mutate(calc_total_days = calc_total_hrs / 24) %>%
+  group_by(decade_sel) %>%
+  slice_max(order_by = calc_total_hrs, n = 1) %>%
+  ungroup()
+max_time_spend_per_decade %>%
+  select(name, age_selected, year_of_selection, nationality, calc_total_days)
+
+
+astro_data_ind %>%
+  filter(!(name %in% max_time_spend_per_decade$name)) %>%
+  mutate(calc_total_days = calc_total_hrs / 24) %>%
+  ggplot(aes(x = year_of_selection, y = age_selected,
+             size = calc_total_days, label = name)) +
+    geom_jitter(alpha = 0.2, col = plasma(3)[1]) +
+    geom_point(data = max_time_spend_per_decade,
+      col = plasma(3)[2]) +
+    labs(x = "Selection year", y = "Selection age",
+         size = "Days in space",
+         title = "**Evolution of the selection age**",
+         subtitle = paste0(
+           "Highlighting the total days spend in space and the",
+           "<span style='color:",
+           plasma(3)[2],
+           "'> astronauts with the most days in space by decade</span>",
+           ".")) +
+    ggrepel::geom_text_repel(
+      data = max_time_spend_per_decade,
+      max.overlaps = Inf, box.padding = 2.2,
+      size = 3.5, segment.color = plasma(3)[2],
+      segment.size = .8,
+      col = "black",
+      fontface = "bold") +
+    scale_x_continuous(breaks = seq(1960, 2010, 10)) +
+    theme(panel.grid.minor.x = element_blank())
+   
+
+```
+```{r}
+# extract the astronauts with the most time spend during eva per decade selected
+max_eva_spend_per_decade <- astro_data_ind %>%
+  group_by(decade_sel) %>%
+  slice_max(order_by = total_eva_hrs, n = 1) %>%
+  ungroup()
+max_eva_spend_per_decade %>%
+  select(name, age_selected, year_of_selection, nationality, total_eva_hrs)
+
+astro_data_ind %>%
+  filter(!(name %in% max_eva_spend_per_decade$name)) %>%
+  ggplot(aes(x = year_of_selection, y = age_selected,
+             size = total_eva_hrs, label = name)) +
+    geom_jitter(alpha = 0.2, col = plasma(3)[1]) +
+    geom_point(data = max_eva_spend_per_decade,
+      col = plasma(3)[2]) +
+    labs(x = "Selection year", y = "Selection age",
+         size = "Total EVA hours",
+         title = "**Evolution of the selection age**",
+         subtitle = paste0(
+           "Highlighting the total EVA hours and the",
+           "<span style='color:",
+           plasma(3)[2],
+           "'> astronauts with the most EVA hours by decade</span>",
+           ".")) +
+    ggrepel::geom_text_repel(
+      data = max_eva_spend_per_decade,
+      max.overlaps = Inf, box.padding = 2.2,
+      size = 3.5, segment.color = plasma(3)[2],
+      segment.size = .8,
+      col = "black",
+      fontface = "bold") +
+    scale_x_continuous(breaks = seq(1960, 2010, 10)) +
+    theme(panel.grid.minor.x = element_blank())
+```
+
+```{r}
+# extract the astronauts with the most missions per decade selected
+# importantly without ties
+max_missions_per_decade <- astro_data_ind %>%
+  group_by(decade_sel) %>%
+  slice_max(order_by = total_number_of_missions, n = 1,
+            with_ties = FALSE) %>%
+  ungroup()
+max_missions_per_decade %>%
+  select(name, age_selected, year_of_selection, nationality,
+         total_number_of_missions)
+
+astro_data_ind %>%
+  filter(!(name %in% max_missions_per_decade$name)) %>%
+  ggplot(aes(x = year_of_selection, y = age_selected,
+             size = total_number_of_missions, label = name)) +
+    geom_jitter(alpha = 0.2, col = plasma(3)[1]) +
+    geom_point(data = max_missions_per_decade,
+      col = plasma(3)[2]) +
+    labs(x = "Selection year", y = "Selection age",
+         size = "#missions",
+         title = "**Evolution of the selection age**",
+         subtitle = paste0(
+           "Highlighting the #missions and the",
+           "<span style='color:",
+           plasma(3)[2],
+           "'> astronauts with the most missions by decade</span>",
+           ". (here: not unique)")) +
+    ggrepel::geom_text_repel(
+      data = max_missions_per_decade,
+      max.overlaps = Inf, box.padding = 2.2,
+      size = 3.5, segment.color = plasma(3)[2],
+      segment.size = .8,
+      col = "black",
+      fontface = "bold") +
+    scale_x_continuous(breaks = seq(1960, 2010, 10)) +
+    theme(panel.grid.minor.x = element_blank())
+```
+
+### So when can I expect to make that space selfie?
+
+
+
+
+
+
+
+
+```{r}
 ggplot(astro_data_ind, aes(x = factor(decade_sel), y = train_time)) +
-  geom_jitter(alpha = 0.5, col = plasma(1), shape = 4) +
+  geom_jitter(col = plasma(1), alpha = 0.1) +
   geom_boxplot(col = "black", size = .8, fill = NA) +
-  labs(x = "", y = "Training time in years") +
-  theme_light() 
+  labs(x = "Decade", y = "Training time",
+       title = "**Evolution of the training time**")
 ```
-
-
-```{r}
-ggplot(astro_data_ind, aes(x = year_of_selection, y = age_selected, col = occupation)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = F, formula = 'y ~ x') +
-  scale_color_viridis_d(option = "C") +
-  theme_light()
-```
-
-```{r}
-ggplot(astro_data_ind, aes(x = year_of_selection, y = age_selected, col = military_civilian)) +
-  geom_point() +
-  geom_smooth(method = "loess", se = F, formula = 'y ~ x') +
-  scale_color_viridis_d(option = "C") +
-  theme_light()
-
-ggplot(astro_data_ind, aes(x = year_of_selection, y = age_selected, col = sex)) +
-  geom_point() +
-  geom_smooth(method = "loess", se = F, formula = 'y ~ x') +
-  scale_color_viridis_d(option = "C") +
-  theme_light()
-```
-
-
-
-
-
-
-
-
-
 
 
 
