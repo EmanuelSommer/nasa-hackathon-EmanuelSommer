@@ -616,7 +616,7 @@ ggplot(astro_data_ind, aes(x = factor(nationality_red), y = age_selected,
   guides(col = "none") +
   labs(x = "Nation(s)", y = "") +
 # get the desired layout
-plot_layout(widths = c(4, 3))
+plot_layout(widths = c(5, 3))
 ```
 
 Visible in this plot is not only that until the late 1970s the space was the playground for only two big nations but that between these two nations and the rest of the world is a difference in the selection ages of their astronauts. The overall rising trend of the selection age is true for all three classes. Right from the beginning of the space exploration U.S. astronauts are selected at on average at least 2 years later than U.S.S.R/Russian astronauts. This gap seemed to widen after the mid 1990s as the U.S. has selected more and more older astronauts while Russia has been quite constant at an age roughly in the early 30s. The same rise in average selection age in the mid 1990s seemed to happen for the class rest of the world. This could be a change in dogma of the NASA which could have been adapted by the ESA and JAXA which work quite closely with NASA and until now ESA/ JAXA astronauts did make up a considerable portion of the rest of the world astronauts. But again quod erat demonstrandum as we are just analyzing the data descriptively here.
@@ -761,7 +761,7 @@ astro_data_ind %>%
            ".")) +
     ggrepel::geom_text_repel(
       data = max_time_spend_per_decade,
-      max.overlaps = Inf, box.padding = 2.3,
+      max.overlaps = Inf, box.padding = 1.4,
       size = 3.5, segment.color = plasma(3)[2],
       segment.size = .8,
       col = "black",
@@ -881,18 +881,18 @@ And once again a similar picture as in the last two plots is visible. A quite co
 
 ### So when can I expect to make that space selfie?
 
-To conclude there is not **the** age you should be selected in order to become an astronaut with a lot of EVA hours or other high career stats. Overall a trend over time towards the selection of astronauts at a higher age (early $\rightarrow$ late thirties) was detected and it turned out that the sex and nationality of the to be astronaut were the most influential features w.r.t. the selection age. I actually expected the military status to have an effect but at least at the bivariate level this was not the case. One could of course get an even better sense for higher order and joint dependencies and influence by modeling the data with vine-copulas, various regression or other models but this is a task for another occasion. Besides if you are a space tourist selection age is not even a thing, just be moderately healthy and filthy rich. As I am a 23 year old male, not filthy rich and from Germany I will probably have roughly 15 years (then my late 30s) in order to get worthy of becoming an astronaut and then making that gorgeous space selfie. Additionally I do not have to stress myself as it was visible that unless you are selected way beyond the 40s there is still the chance to accumulate quite impressive space career stats even with a higher selection age. Actually it was visible that some space superstars had actually a quite high selection age like Al Shepard, whose selection age I would have predicted way lower. So who knows, with the median training time of 6 years I might gaze down on earth or mars - like our friend Elon would wish - in ~20 years while a space drone takes an amazing selfie of me ;D.
-
-**Thanks for sticking with it!**
+To conclude there is not **the** age you should be selected in order to become an astronaut with a lot of EVA hours or other high career stats. Overall a trend over time towards the selection of astronauts at a higher age (early $\rightarrow$ late thirties) was detected and it turned out that the sex and nationality of the to be astronaut were the most influential features w.r.t. the selection age. I actually expected the military status to have an effect but at least at the bivariate level this was not the case. One could of course get an even better sense for higher order and joint dependencies and influence by modeling the data with vine-copulas, various regression or other models but this is a task for another occasion. Besides if you are a space tourist selection age is not even a thing, just be moderately healthy and filthy rich. As I am a 23 year old male, not filthy rich and from Germany I will probably have roughly 15 years (then my late 30s) in order to get worthy of becoming an astronaut and then making that gorgeous space selfie. Additionally I do not have to stress myself as it was visible that unless you are selected way beyond the 40s there is still the chance to accumulate quite impressive space career stats even with a higher selection age. Actually it was visible that some space superstars had actually a quite high selection age like Al Shepard, whose selection age I would have predicted way lower. So who knows, with the median training time of 6 years I might gaze down on earth or mars - like our friend Elon would wish - in ~20 years while a space drone takes an amazing selfie of me ;D ...
 
 
 
 
+```{r, echo=FALSE, fig.align='center', out.width="70%"}
+knitr::include_graphics("img/Selfie_Alexander_Gerst.jpg")
+# https://www.esa.int/ESA_Multimedia/Images/2014/10/Selfie_Alexander_Gerst
+```
 
 
-
-
-
+**Thanks for sticking with it!**^[The sources of the images used are declared in the source code on Github.]
 
 
 
