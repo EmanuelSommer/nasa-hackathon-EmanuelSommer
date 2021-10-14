@@ -1,7 +1,7 @@
 # NASA Hackathon
 ![](img/cooperation.jpg?raw=true "NASA Hackathon")
 
-My winning submission for the NASA hackathon of the DSA Munich. 
+My winning submission for the NASA hackathon 2021 of the DSA Munich. 
 
 - Final ranking: :trophy: **1st Place** :rocket:
 - Task: Based on the provided data set `astronauts.csv` ([Paper](https://www.sciencedirect.com/science/article/abs/pii/S2214552420300444)) create a Data Analysis report.
