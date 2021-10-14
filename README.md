@@ -3,6 +3,8 @@
 
 My winning submission for the NASA hackathon 2021 of the DSA Munich. 
 
+
+
 - Final ranking: :trophy: **1st Place** :rocket:
 - Task: Based on the provided data set `astronauts.csv` ([Paper](https://www.sciencedirect.com/science/article/abs/pii/S2214552420300444)) create a Data Analysis report.
 - Evaluation criteria:
@@ -13,5 +15,8 @@ My winning submission for the NASA hackathon 2021 of the DSA Munich.
   - Code readablity
 - Programming language used: **R**
 - My final report `report_dsa_nasa_EmanuelSommer.pdf` explored the topic: *When is the prime time to be selected to fly to space?*
+
+:mag: [**Check out the final report**](https://emanuelsommer.github.io/nasa-hackathon-EmanuelSommer/report_dsa_nasa_EmanuelSommer.pdf) :mag:
+
 
 A big thanks to the members of the [Data Science Association Munich](https://www.dsa-muc.com/) to organize the great event!:clap: 
