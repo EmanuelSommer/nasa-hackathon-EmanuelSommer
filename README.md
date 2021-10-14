@@ -1,7 +1,7 @@
 # NASA Hackathon
 ![](img/cooperation.jpg?raw=true "NASA Hackathon")
 
-My winning submission for the NASA hackathon 2021 of the DSA Munich. 
+The source code for my winning submission for the NASA hackathon 2021 of the DSA Munich. 
 
 
 
@@ -14,9 +14,9 @@ My winning submission for the NASA hackathon 2021 of the DSA Munich.
   - Informative visualizations
   - Code readablity
 - Programming language used: **R**
-- My final report `report_dsa_nasa_EmanuelSommer.pdf` explored the topic: *When is the prime time to be selected to fly to space?*
+- My final report explored the topic: *When is the prime time to be selected to fly to space?*
 
 :mag: [**Check out the final report**](https://emanuelsommer.github.io/nasa-hackathon-EmanuelSommer/report_dsa_nasa_EmanuelSommer.pdf) :mag:
 
 
-A big thanks to the members of the [Data Science Association Munich](https://www.dsa-muc.com/) to organize the great event!:clap: 
+A big thanks to the members of the [Data Science Association Munich](https://www.dsa-muc.com/) for organizing the great event!:clap: 
